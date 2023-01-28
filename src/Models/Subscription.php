@@ -14,6 +14,7 @@ use Appfinesse\Scribe\Models\Scopes\ExpiringWithGraceDaysScope;
 use Appfinesse\Scribe\Models\Scopes\StartingScope;
 use Appfinesse\Scribe\Models\Scopes\SuppressingScope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -144,14 +145,13 @@ class Subscription extends Model
         return $this;
     }
 
-    public function getIsOverdueAttribute(): bool
+    public function isOverdue(): Attribute
     {
-        if ($this->grace_days_ended_at) {
-            return $this->expired_at->isPast()
-                and $this->grace_days_ended_at->isPast();
-        }
-
-        return $this->expired_at->isPast();
+        return Attribute::make(
+            get: fn () => $this->grace_days_ended_at ?
+                ($this->expired_at->isPast() && $this->grace_days_ended_at->isPast()) :
+                $this->expired_at->isPast(),
+        );
     }
 
     private function getRenewedExpiration(?Carbon $expirationDate = null)

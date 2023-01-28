@@ -9,6 +9,7 @@ use Appfinesse\Scribe\Models\FeatureTicket;
 use Appfinesse\Scribe\Models\Plan;
 use Appfinesse\Scribe\Models\Subscription;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -348,16 +349,12 @@ trait HasSubscriptions
         return $feature;
     }
 
-    public function getFeaturesAttribute(): Collection
+    public function features(): Attribute
     {
-        if (! is_null($this->loadedFeatures)) {
-            return $this->loadedFeatures;
-        }
-
-        $this->loadedFeatures = $this->loadSubscriptionFeatures()
-            ->concat($this->loadTicketFeatures());
-
-        return $this->loadedFeatures;
+        return new Attribute(
+            fn () => $this->loadSubscriptionFeatures()
+                ->concat($this->loadTicketFeatures()),
+        );
     }
 
     protected function loadSubscriptionFeatures(): Collection
