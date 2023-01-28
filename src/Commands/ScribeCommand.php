@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Appfinesse\Scribe\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class ScribeCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'scribe';
 
     public $description = 'My command';
 
