@@ -1,0 +1,115 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Appfinesse\Scribe\Models\Plan;
+use Appfinesse\Scribe\Models\Feature;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+
+        Schema::create('plans', function (Blueprint $table) {
+            $table->id();
+            $table->integer('grace_days')->default(0);
+            $table->string('name');
+            $table->unsignedInteger('periodicity');
+            $table->string('periodicity_type');
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::create('subscriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignIdFor(Plan::class);
+            $table->timestamp('canceled_at')->nullable();
+            $table->timestamp('expired_at')->nullable();
+            $table->timestamp('grace_days_ended_at')->nullable();
+            $table->date('started_at');
+            $table->timestamp('suppressed_at')->nullable();
+            $table->boolean('was_switched')->default(false);
+            $table->softDeletes();
+            $table->timestamps();
+
+            if (config('scribe.models.subscriber.uses_uuid')) {
+                $table->uuidMorphs('subscriber');
+            } else {
+                $table->numericMorphs('subscriber');
+            }
+        });
+        Schema::create('features', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->boolean('consumable');
+            $table->boolean('quota')->default(false);
+            $table->boolean('postpaid')->default(false);
+            $table->unsignedInteger('periodicity')->nullable();
+            $table->string('periodicity_type')->nullable();
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::create('feature_consumptions', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedDecimal('consumption')->nullable();
+            $table->timestamp('expired_at')->nullable();
+            $table->foreignIdFor(Feature::class)->constrained()->cascadeOnDelete();
+            $table->timestamps();
+
+            if (config('scribe.models.subscriber.uses_uuid')) {
+                $table->uuidMorphs('subscriber');
+            } else {
+                $table->numericMorphs('subscriber');
+            }
+        });
+        Schema::create('subscription_renewals', function (Blueprint $table) {
+            $table->id();
+            $table->boolean('overdue');
+            $table->boolean('renewal');
+            $table->foreignIdFor(\Appfinesse\Scribe\Models\Subscription::class);
+            $table->timestamps();
+        });
+        Schema::create('feature_plan', function (Blueprint $table) {
+            $table->id();
+            $table->decimal('charges')->nullable();
+            $table->foreignIdFor(Feature::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(Plan::class)->constrained()->cascadeOnDelete();
+            $table->timestamps();
+        });
+
+        Schema::create('feature_tickets', function (Blueprint $table) {
+            $table->id();
+            $table->decimal('charges')->nullable();
+            $table->timestamp('expired_at')->nullable();
+            $table->foreignIdFor(Feature::class)->constrained()->cascadeOnDelete();
+            $table->timestamps();
+            if (config('scribe.models.subscriber.uses_uuid')) {
+                $table->uuidMorphs('subscriber');
+            } else {
+                $table->numericMorphs('subscriber');
+            }
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('subscriptions');
+        Schema::dropIfExists('plans');
+        Schema::dropIfExists('features');
+        Schema::dropIfExists('feature_consumptions');
+        Schema::dropIfExists('subscription_renewals');
+        Schema::dropIfExists('feature_plan');
+        Schema::dropIfExists('feature_tickets');
+    }
+};
