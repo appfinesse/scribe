@@ -21,6 +21,5 @@ class ScribeServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasMigration('create_scribe_tables')
             ->hasCommand(ScribeCommand::class);
-
     }
 }
